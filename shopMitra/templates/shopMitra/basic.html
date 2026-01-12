@@ -1,0 +1,265 @@
+{% load static %} 
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% static 'shopMitra/style.css' %}">
+    <style>
+     body
+    { 
+      padding-top: 70px; 
+    }
+    .navbar .search-input {
+      min-width: 200px;       
+      width: 35vw;            
+      max-width: 560px;       
+    }
+    {% block style %}{% endblock %}
+    </style>
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow ">
+      <div class="container-fluid">
+        <a class="navbar-brand text-primary" href={% url 'Home' %}>ShopMitra</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+        <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse align-items-center" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link {% if request.path == '/' %}text-primary {% else %}text-light{% endif %}" href="{% url 'Home' %}">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if request.path == '/about/' %}text-primary{% else %}text-light{% endif %}" href="{% url 'AboutUs' %}">About Us</a>
+            </li>
+             <li class="nav-item">
+              <a class="nav-link {% if request.path == '/tracker/' %}text-primary{% else %}text-light{% endif %}" href="{% url 'Tracker' %}">Tracker</a>
+            </li>
+             <li class="nav-item">
+              <a class="nav-link {% if request.path == '/contact/' %}text-primary{% else %}text-light{% endif %}" href="{% url 'ContactUs' %}">Contact Us</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link {% if request.path == '/checkout/' %}text-primary{% else %}text-light{% endif %}" href="{% url 'Checkout' %}">CheckOut</a>
+            </li>
+          </ul>
+          <form method="get" class="d-flex" role="search" action={% url 'Search' %}>
+            <input
+              class="form-control me-2 search-input"
+              type="search"
+              name = "query"
+              placeholder="Search shopMitra"
+              aria-label="Search" 
+            />
+            <button class="btn btn-outline-success" type="submit">
+              Search
+            </button>
+          </form>
+          <button type="button" class="btn btn-primary mx-2" data-bs-container="body" id="popcart" data-bs-toggle="popover" data-bs-placement="bottom" data-bs-html="true" data-bs-content="Your Cart Items">
+            Cart(<span id="cart">0</span>)
+          </button> 
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Logout</button>
+            </form>
+          {% else %}
+              <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+          {% endif %} 
+        </div>
+      </div>
+    </nav>
+    {% block content %}{% endblock %}
+    <footer class="bg-dark text-light py-3">
+      <div class="container">
+        <p class="mb-1 text-center">
+          &copy; 2025 ShopMitra. All rights reserved.
+        </p>
+        <p class="mb-0 text-center">
+          Designed & Developed by <strong>Bhavesh Parmar</strong>
+        </p>
+      </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    
+{% block js %}
+<script>
+  // find out the cart items from localStorage
+  if (localStorage.getItem("cart") == null) 
+  {
+    var cart = {};
+  } 
+  else 
+  {
+    cart = JSON.parse(localStorage.getItem("cart"));
+  }
+
+// add popover to the cart button
+$(document).ready(function () {
+    const pop = new bootstrap.Popover($("#popcart")[0], {
+        html: true,
+        sanitize: false,
+        content: "Loading..."
+    });
+
+    $("#popcart").click(function () {
+        pop.show();
+    });
+
+    updatecart(cart);
+    updatepopover(cart);
+});
+
+function updatepopover(cart) {
+    let popStr = "<h5>Your Cart Items</h5>";
+    let i = 1;
+
+    for (let item in cart) {
+        let productName = cart[item][1]; // name from cart object
+        let productQty = cart[item][0];  // quantity
+
+        popStr += "<b>" + i + ".</b> " + productName + " - Qty: " + productQty + "<br>";
+        i++;
+    }
+
+    if (Object.keys(cart).length === 0) {
+        popStr = "<h5>Your Cart is Empty!</h5>";
+    }
+
+    // Add Checkout + Clear Buttons
+    popStr += `
+        <hr>
+        <button class="btn btn-success btn-sm w-100 my-1" id="checkoutBtn">Checkout</button>
+        <button class="btn btn-danger btn-sm w-100" id="clearcartBtn">Clear Cart</button>
+    `;
+
+    let popover = bootstrap.Popover.getInstance(document.getElementById("popcart"));
+    popover.setContent({
+        ".popover-body": popStr
+    });
+}
+
+// When user clicks Checkout button
+$(document).on("click", "#checkoutBtn", function () {
+    window.location.href = "/checkout"; 
+});
+
+// When user clicks Clear Cart button
+$(document).on("click", "#clearcartBtn", function () {
+    clearcart();
+    let pop = bootstrap.Popover.getInstance(document.getElementById("popcart"));
+    pop.hide(); // hide popover after clearing
+});
+
+function clearcart() {
+    if (localStorage.getItem("cart") == null) {
+        return;
+    }
+
+    cart = JSON.parse(localStorage.getItem("cart"));
+
+    for (let item in cart) {
+        let priceElement = document.getElementById('price' + item);
+
+        // sirf tab hi HTML change karo jab element exist kare
+        if (priceElement) {
+            priceElement.innerHTML =
+                "<button id='add-to-cart" + item + "' class='btn btn-primary btn-sm cart'>Add to Cart</button>";
+        }
+    }
+
+    localStorage.removeItem("cart");
+    cart = {};
+    updatecart(cart);
+
+    if (window.location.pathname === "/checkout/") {
+        window.location.reload();
+    }
+}
+
+
+function updatecart(cart) {
+    var sum=0;
+    for (let item in cart) {
+        sum += cart[item][0];
+    }
+    localStorage.setItem("cart", JSON.stringify(cart));
+    document.getElementById("cart").innerHTML = sum;// for total items in cart
+    updatepopover(cart);
+}
+
+  $(document).on("click", ".cart", function () { 
+    var idstr = this.id.toString();   // "add-to-cart6"
+    var id = idstr.replace("add-to-cart", "");  // "6"
+    id = parseInt(id);  // convert string to number
+
+    if (cart[id] != undefined) {
+      qty = cart[id][0] + 1;
+    } else {
+      qty = 1;
+      name = document.getElementById('prname'+id).getAttribute('data-fullname');
+      price = document.getElementById('pricepr'+id).innerHTML.trim();
+      cart[id] = [qty, name, parseInt(price)];
+    }
+    $("#price" + id).html(
+        "<button id='minus" + id + "' class='btn btn-primary minus'>-</button> " +
+        "<span id='val" + id + "'>" + cart[id][0] + "</span> " +
+        "<button id='plus" + id + "' class='btn btn-primary plus'>+</button>"
+    );
+    updatecart(cart);
+});
+
+
+// for minus button
+$(document).on("click", "button.minus", function () {
+    const id = parseInt(this.id.slice(5));
+
+    cart[id][0]--;
+  
+    if (cart[id][0] < 1) {
+        delete cart[id];
+
+        // Replace back to Add to Cart
+        $("#price" + id).html(
+            "<button id='add-to-cart" + id + "' class='btn btn-primary btn-sm cart'>Add to Cart</button>"
+        );
+    } else {
+        //  Update only the value shown on screen
+        $("#val" + id).text(cart[id][0]);
+    }
+    
+    updatecart(cart);
+    localStorage.setItem("cart", JSON.stringify(cart));
+});
+
+// for plus button
+$(document).on("click", "button.plus", function () {
+
+    let id = this.id.slice(4);  // removes "plus" → gives product_id
+    id = parseInt(id);
+
+    cart[id][0] = cart[id][0] + 1;
+
+    $("#val" + id).text(cart[id][0]);
+
+    updatecart(cart);
+    localStorage.setItem("cart", JSON.stringify(cart));
+});
+
+</script>
+{% endblock %}
+
+  </body>
+</html>

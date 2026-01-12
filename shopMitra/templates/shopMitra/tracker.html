@@ -1,0 +1,159 @@
+{% extends "shopMitra/basic.html" %}
+{% load static %}
+
+{% block title %}Order Tracker | ShopMitra{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+
+  <!-- Page Heading -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">Order Tracker</h2>
+    <p class="text-muted">
+      Enter your <strong>Order ID</strong> and <strong>Email Address</strong> to track your order
+    </p>
+  </div>
+
+  <!-- Tracker Form -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <form method="post" id="trackerform" class="row g-3">
+            {% csrf_token %}
+
+            <div class="col-md-6">
+              <label for="orderid" class="form-label">Order ID</label>
+              <input
+                type="text"
+                class="form-control"
+                id="orderid"
+                name="orderid"
+                placeholder="e.g. 12345"
+                required
+              />
+            </div>
+
+            <div class="col-md-6">
+              <label for="email" class="form-label">Email Address</label>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+
+            <div class="col-12 text-center mt-3">
+              <button type="submit" class="btn btn-primary px-5">
+                Track Order
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="row justify-content-center mt-5">
+    <div class="col-md-10">
+
+      <!-- Order Status -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light fw-semibold">
+          Order Status
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush text-muted" id="items">
+            <li class="list-group-item text-center">
+              Enter your Order ID and Email to view order status
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Order Details -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light fw-semibold">
+          Order Details
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush text-muted" id="citems">
+            <li class="list-group-item text-center">
+              Order details will appear here after successful tracking
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+
+$('#trackerform').submit(function(event){
+    
+    event.preventDefault();
+    $('#items').empty();
+    $('#citems').empty();
+    var formData = {
+        'orderid': $('input[name=orderid]').val(),
+        'email': $('input[name=email]').val(),
+        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val(),
+    };
+
+    $.ajax({
+        type: 'POST',
+        url: '/tracker/',
+        data: formData,
+        encode: true
+    })
+    .done(function(data){
+        console.log(data);
+        data = JSON.parse(data);
+        var updates = data[0];
+        if (updates.length>0 && updates!={}){
+        
+            for(var i=0; i<updates.length; i++){
+                let text = updates[i]['text'];
+                let time = updates[i]['time'];
+                mystr = `<li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">${text}</div>
+                            </div>
+                            <span class="badge text-bg-primary rounded-pill">${time}</span>
+                         </li>`
+                $("#items").append(mystr);
+            }
+        }
+        else{
+            let mystr = `<li class="list-group-item">sorry we are not able to fetch this order id and email. Make sure you enter the correct order id and email</li>`;
+            $('#items').append(mystr);
+        }
+      // Fill in the order Details
+      cart = JSON.parse(data[1]);
+      console.log(cart);
+      for (item in cart) {
+          let name = cart[item][1];
+          let qty = cart[item][0];
+          mystr = `<li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">${name}</div>
+                      </div>
+                      <span class="badge text-bg-primary rounded-pill">${qty}</span>
+                    </li>`
+          $("#citems").append(mystr);
+      }
+    });
+});
+
+</script>
+{% endblock %}

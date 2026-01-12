@@ -1,0 +1,82 @@
+{% extends 'shopMitra/basic.html' %}
+{% block title %} {{ product.product_name }} - shopMitra {% endblock %}
+
+{% block content %}
+<div class="container-fluid my-4">
+  <div class="row">
+
+    <div class="col-md-6">
+      <img src="{{ product.image.url }}"
+           alt="{{ product.product_name }}"
+           class="img-fluid">
+    </div>
+
+    <div class="col-md-6 mt-3">
+
+      <!-- IMPORTANT: same IDs as index page -->
+      <h2 id="prname{{ product.id }}"
+          data-fullname="{{ product.product_name }}">
+        {{ product.product_name }}
+      </h2>
+
+      <p class="text-muted">
+        Category: {{ product.category }}
+      </p>
+
+      <p>{{ product.description }}</p>
+
+      <h4 class="text-success">
+        ₹<span id="pricepr{{ product.id }}">{{ product.price }}</span>
+      </h4>
+
+      <!-- ADD TO CART (JS connected) -->
+      <span id="price{{ product.id }}">
+        <button
+          class="btn btn-primary cart"
+          id="add-to-cart{{ product.id }}">
+          Add to Cart
+        </button>
+      </span>
+
+      <!-- BUY NOW -->
+      <button
+        class="btn btn-success buynow"
+        data-id="{{ product.id }}">
+        Buy Now
+      </button>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block js %}
+{{ block.super }}
+<script>
+  // Ensure cart exists
+  if (localStorage.getItem("cart") == null) {
+      var cart = {};
+  } else {
+      var cart = JSON.parse(localStorage.getItem("cart"));
+  }
+
+  // BUY NOW logic
+  $(document).on("click", ".buynow", function () {
+      let id = $(this).data("id");
+
+      if (cart[id] != undefined) {
+          qty = cart[id][0] + 1;
+      } else {
+          let qty = 1;
+          let name = document.getElementById('prname'+id).getAttribute('data-fullname');
+          let price = document.getElementById('pricepr'+id).innerHTML.trim();
+          cart[id] = [qty, name, parseInt(price)];
+      }
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+
+      // redirect to checkout
+      window.location.href = "{% url 'Checkout' %}";
+  });
+</script>
+{% endblock %}

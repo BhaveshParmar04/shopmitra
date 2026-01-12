@@ -1,0 +1,11 @@
+{% extends "shopMitra/basic.html" %}
+
+{% block content %}
+<h2>Payment Successful 🎉</h2>
+
+<p>Order ID: {{ order.order_id }}</p>
+<p>Payment ID: {{ order.razorpay_payment_id }}</p>
+<p>Status: {{ order.payment_status }}</p>
+
+<a href="/" class="btn btn-primary">Continue Shopping</a>
+{% endblock %}
