@@ -118,9 +118,22 @@ def productview(request, id):
        
 
 
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404
+from django.conf import settings
+import razorpay
+import os
+
 @login_required
 def checkout(request):
     if request.method == "POST":
+        
+        razorpay_client = razorpay.Client(
+            auth=(
+                os.environ.get("RAZORPAY_KEY_ID"),
+                os.environ.get("RAZORPAY_KEY_SECRET")
+            )
+        )
 
         items_json = request.POST.get("itemsjson")
         name = request.POST.get("name")
@@ -172,12 +185,12 @@ def checkout(request):
 
             return render(request, "shopMitra/payment.html", {
                 "order": order,
-                "razorpay_key": settings.RAZORPAY_KEY_ID,
+                "razorpay_key": os.environ.get("RAZORPAY_KEY_ID"),
                 "razorpay_order_id": order.razorpay_order_id,
                 "amount": amount * 100
             })
 
-        request.session.pop("pending_order_id", None)
+        request.session.pop("razorpay_order_id", None)
 
         return render(request, "shopMitra/checkout.html", {
             "thank": True,
